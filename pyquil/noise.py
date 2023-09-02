@@ -16,26 +16,22 @@
 """
 Module for creating and verifying noisy gate and readout definitions.
 """
-import json
 import sys
 from collections import namedtuple
 from typing import Dict, List, Sequence, Optional, Any, Tuple, Set, Iterable, TYPE_CHECKING, Union, cast, Self
 
 import numpy as np
-import requests
 
-from pyquil.api import QuantumComputer
 from pyquil.external.rpcq import CompilerISA
 from pyquil.gates import I, RX, MEASURE
 from pyquil.noise_gates import _get_qvm_noise_supported_gates
-from pyquil.quantum_processor.qcs import get_qcs_quantum_processor
 from pyquil.quilatom import MemoryReference, format_parameter, ParameterDesignator, Qubit
 from pyquil.quilbase import Declare, Gate, DefGate, Pragma, DelayQubits
-from pyquil.quantum_processor import QCSQuantumProcessor
 
 if TYPE_CHECKING:
     from pyquil.quil import Program
     from pyquil.api import QuantumComputer as PyquilApiQuantumComputer
+    from pyquil.quantum_processor.qcs import QCSQuantumProcessor
 
 INFINITY = float("inf")
 "Used for infinite coherence times."
@@ -844,28 +840,28 @@ def change_times_by_ratio(times: Dict[Any, float], ratio: float):
     return times
 
 
-def get_t1s(qpu: QCSQuantumProcessor) -> Dict[int, float]:
+def get_t1s(qpu: "QCSQuantumProcessor") -> Dict[int, float]:
     benchmarks = qpu._isa.benchmarks
     operations = next(operation for operation in benchmarks if operation.name == "FreeInversionRecovery")
     t1s = {site.node_ids[0]: site.characteristics[0].value for site in operations.sites}
     return t1s
 
 
-def get_t2s(qpu: QCSQuantumProcessor) -> Dict[int, float]:
+def get_t2s(qpu: "QCSQuantumProcessor") -> Dict[int, float]:
     benchmarks = qpu._isa.benchmarks
     operations = next(operation for operation in benchmarks if operation.name == "FreeInductionDecay")
     t2s = {site.node_ids[0]: site.characteristics[0].value for site in operations.sites}
     return t2s
 
 
-def get_1q_fidelities(qpu: QCSQuantumProcessor) -> Dict[int, float]:
+def get_1q_fidelities(qpu: "QCSQuantumProcessor") -> Dict[int, float]:
     benchmarks = qpu._isa.benchmarks
     operations = next(operation for operation in benchmarks if operation.name == "randomized_benchmark_1q")
     fidelities = {site.node_ids[0]: site.characteristics[0].value for site in operations.sites}
     return fidelities
 
 
-def get_readout_fidelities(qpu: QCSQuantumProcessor) -> Dict[int, float]:
+def get_readout_fidelities(qpu: "QCSQuantumProcessor") -> Dict[int, float]:
     instructions = qpu._isa.instructions
     sites = [operation for operation in instructions if operation.name == "MEASURE"][0].sites
     fro = {site.node_ids[0]: site.characteristics[0].value for site in sites}
@@ -888,8 +884,11 @@ class Calibrations:
         Notice: this class heavily relies on the specific way on which the lattices are written.
         this may change in time, and require changes in the class.
     """
-
-    def __init__(self, qc: Optional[QuantumComputer] = None, calibrations: Self = None) -> None:
+    
+    
+    def __init__(self, qc: Optional["PyquilApiQuantumComputer"] = None, calibrations: Self = None) -> None:
+        from pyquil.quantum_processor.qcs import get_qcs_quantum_processor
+        
         self.fidelities = {}
         self.readout_fidelity = {}
         self.T2 = {}
@@ -918,7 +917,7 @@ class Calibrations:
             self.readout_fidelity = get_readout_fidelities(qpu)
             self._create_2q_dicts(qpu)
 
-    def _create_2q_dicts(self, qpu: QCSQuantumProcessor) -> None:
+    def _create_2q_dicts(self, qpu: "QCSQuantumProcessor") -> None:
         instructions = qpu._isa.instructions
         self.two_q_gates = {
             operation.name
@@ -1299,7 +1298,7 @@ def add_kraus_maps_to_program(
 
 
 def add_noise_to_program(
-    qc: QuantumComputer,
+    qc: "PyquilApiQuantumComputer",
     p: Program,
     convert_to_native: bool = True,
     calibrations: Optional[Calibrations] = None,
