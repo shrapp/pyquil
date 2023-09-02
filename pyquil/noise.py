@@ -885,11 +885,10 @@ class Calibrations:
         Notice: this class heavily relies on the specific way on which the lattices are written.
         this may change in time, and require changes in the class.
     """
-    
-    
+
     def __init__(self, qc: Optional["PyquilApiQuantumComputer"] = None, calibrations: Self = None) -> None:
         from pyquil.quantum_processor.qcs import get_qcs_quantum_processor
-        
+
         self.fidelities = {}
         self.readout_fidelity = {}
         self.T2 = {}
