@@ -1300,7 +1300,7 @@ def add_kraus_maps_to_program(
 
 def add_noise_to_program(
     qc: "PyquilApiQuantumComputer",
-    p: Program,
+    p: "Program",
     convert_to_native: bool = True,
     calibrations: Optional[Calibrations] = None,
     depolarizing: bool = True,
